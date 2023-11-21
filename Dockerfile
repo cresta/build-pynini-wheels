@@ -40,7 +40,7 @@ RUN cd /tmp \
 # Compiles OpenFst.
 RUN cd "/tmp/openfst-${FST_VERSION}" \
     && ./configure --enable-grm \
-    && make --jobs 2 install \
+    && make --jobs 4 install \
     && rm -rd "/tmp/openfst-${FST_VERSION}"
 
 # Gets and unpacks Pynini source.
