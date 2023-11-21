@@ -1,0 +1,52 @@
+name: Publish private pypi package
+
+on: workflow_dispatch
+
+jobs:
+  upload_artifact:
+    name: Upload library to private pypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+          role-to-assume: ${{ secrets.S3_UPLOAD_ROLE_ARN }}
+          role-duration-seconds: 1200
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      - name: Use private pypi repository
+        run: |
+          aws codeartifact login --tool twine --repository pypi-private --domain cresta-private
+          aws codeartifact login --tool pip --repository pypi-private --domain cresta-private
+      - name: Set pynini version
+        id: versions
+        run: |
+          echo "pynini-ver=${PYNINI_VER}" >> $GITHUB_OUTPUT
+          echo "openfst-ver=${OPENFST_VER}" >> $GITHUB_OUTPUT
+        env:
+          PYNINI_VER: ${{ inputs.pynini-ver || '2.1.5' }}
+          OPENFST_VER: ${{ inputs.openfst-ver || '1.8.2' }}
+      - name: Build pynini
+        run: |
+          docker build --build-arg="PYNINI_VERSION=${{ steps.versions.outputs.pynini-ver }}" --build-arg="FST_VERSION=${{ steps.versions.outputs.openfst-ver }}" --target=run-tests -t build-pynini-wheels .
+          mkdir ${{ runner.temp }}/pynini-wheels
+          docker run --rm -v ${{ runner.temp }}/pynini-wheels:/io build-pynini-wheels cp -r /wheelhouse /io
+      - name: Tar file to upload
+        run: |
+          tar czvf pynini-wheels.tar.gz ${{ runner.temp }}/pynini-wheels
+      - uses: actions/upload-artifact@v3
+        name: Upload Gen
+        with:
+          name: pynini-wheels
+          path: pynini-wheels.tar.gz
+      - name: Install tools
+        run: |
+          pip install twine==3.4.1
