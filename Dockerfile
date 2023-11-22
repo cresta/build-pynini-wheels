@@ -86,7 +86,7 @@ FROM common AS install-pynini-from-wheel
 COPY --from=build-wheels /wheelhouse /wheelhouse
 
 # Installs the wheels in all our Pythons.
-RUN "${PYBIN}/pip" install pynini --no-index -f /wheelhouse || exit; \
+RUN "${PYBIN}/pip" install pynini --no-index -f /wheelhouse
 
 # ***************************
 # *** Runs pynini's tests ***
