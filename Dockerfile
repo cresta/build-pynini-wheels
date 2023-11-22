@@ -16,9 +16,7 @@
 FROM quay.io/pypa/manylinux2014_x86_64 AS common
 
 # The versions we want in the wheels.
-# ENV FST_VERSION "1.8.2"
-# ENV PYNINI_VERSION "2.1.5"
-ARG FST_VERSION 
+ARG FST_VERSION
 ARG PYNINI_VERSION
 
 # ***********************************************************************
@@ -63,11 +61,11 @@ RUN "${PYBIN}/pip" install --upgrade pip -r "/src/pynini-${PYNINI_VERSION}/requi
 FROM wheel-building-env AS build-wheels
 
 # Compiles the wheels to a temporary directory.
-RUN "/opt/python/${PY_VERSION}/bin/pip" wheel "/src/pynini-${PYNINI_VERSION}" -w /tmp/wheelhouse/
+RUN "${PYBIN}/pip" install build && "${PYBIN}/python" -m build -n --sdist --wheel "/src/pynini-${PYNINI_VERSION}" -o /tmp/wheelhouse/
 
 # Bundles external shared libraries into the wheels.
 # See https://github.com/pypa/manylinux/tree/manylinux2014
-RUN for WHL in /tmp/wheelhouse/cresta-pynini*.whl; do \
+RUN for WHL in /tmp/wheelhouse/cresta_pynini*.whl; do \
     auditwheel repair "${WHL}" -w /wheelhouse/ || exit; \
 done
 
@@ -85,8 +83,10 @@ FROM common AS install-pynini-from-wheel
 # Grabs the wheels (but just the wheels) from the previous image.
 COPY --from=build-wheels /wheelhouse /wheelhouse
 
+ENV PY_VERSION cp310-cp310
+ENV PYBIN /opt/python/$PY_VERSION/bin
 # Installs the wheels in all our Pythons.
-RUN "${PYBIN}/pip" install pynini --no-index -f /wheelhouse
+RUN "${PYBIN}/pip" install cresta-pynini --no-index -f /wheelhouse
 
 # ***************************
 # *** Runs pynini's tests ***
