@@ -67,7 +67,7 @@ RUN "/opt/python/${PY_VERSION}/bin/pip" wheel "/src/pynini-${PYNINI_VERSION}" -w
 
 # Bundles external shared libraries into the wheels.
 # See https://github.com/pypa/manylinux/tree/manylinux2014
-RUN for WHL in /tmp/wheelhouse/pynini*.whl; do \
+RUN for WHL in /tmp/wheelhouse/cresta-pynini*.whl; do \
     auditwheel repair "${WHL}" -w /wheelhouse/ || exit; \
 done
 
