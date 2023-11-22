@@ -50,11 +50,12 @@ RUN mkdir -p /src && cd /src \
     && rm "pynini-${PYNINI_VERSION}.tar.gz"
 
 # Installs requirements in all our Pythons.
+ENV PY_VERSION cp310-cp310
+ENV PYBIN /opt/python/$PY_VERSION/bin
 COPY requirements.txt /src/pynini-${PYNINI_VERSION}/requirements.txt
-RUN for PYBIN in /opt/python/*/bin; do \
-    "${PYBIN}/pip" install --upgrade \
-        pip -r "/src/pynini-${PYNINI_VERSION}/requirements.txt" || exit; \
-done
+RUN "${PYBIN}/pip" install --upgrade pip -r "/src/pynini-${PYNINI_VERSION}/requirements.txt" \
+    # Use a private package name so that we can upload it to the private repo
+    && sed 's/name="pynini"/name="cresta-pynini"/' -i /src/pynini-${PYNINI_VERSION}/setup.py
 
 # **********************************************************
 # *** Image making pynini wheels (placed in /wheelhouse) ***
@@ -62,10 +63,7 @@ done
 FROM wheel-building-env AS build-wheels
 
 # Compiles the wheels to a temporary directory.
-RUN for PYBIN in /opt/python/*/bin; do \
-    "${PYBIN}/pip" wheel "/src/pynini-${PYNINI_VERSION}" -w /tmp/wheelhouse/ \
-    || exit; \
-done
+RUN "/opt/python/${PY_VERSION}/bin/pip" wheel "/src/pynini-${PYNINI_VERSION}" -w /tmp/wheelhouse/
 
 # Bundles external shared libraries into the wheels.
 # See https://github.com/pypa/manylinux/tree/manylinux2014
@@ -88,9 +86,7 @@ FROM common AS install-pynini-from-wheel
 COPY --from=build-wheels /wheelhouse /wheelhouse
 
 # Installs the wheels in all our Pythons.
-RUN for PYBIN in /opt/python/*/bin; do \
-    "${PYBIN}/pip" install pynini --no-index -f /wheelhouse || exit; \
-done
+RUN "${PYBIN}/pip" install pynini --no-index -f /wheelhouse || exit; \
 
 # ***************************
 # *** Runs pynini's tests ***
@@ -101,13 +97,11 @@ FROM install-pynini-from-wheel AS run-tests
 COPY --from=wheel-building-env "/src/pynini-${PYNINI_VERSION}/tests" /tests
 
 # Runs Pynini's tests for each of our Pythons.
-RUN for PYBIN in /opt/python/*/bin; do \
-    "${PYBIN}/pip" install absl-py || exit; \
+RUN "${PYBIN}/pip" install absl-py || exit; \
     for TEST in tests/*_test.py; do \
         # This test requires external attributes, so we don't bother.
         if [[ "${TEST}" == "tests/chatspeak_model_test.py" ]]; then \
             continue; \
         fi; \
         "${PYBIN}/python" "${TEST}" || exit; \
-    done \
-done
+    done
