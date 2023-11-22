@@ -69,9 +69,6 @@ RUN for WHL in /tmp/wheelhouse/cresta_pynini*.whl; do \
     auditwheel repair "${WHL}" -w /wheelhouse/ || exit; \
 done
 
-# Copies over Cython wheels.
-RUN cp /tmp/wheelhouse/Cython*.whl /wheelhouse
-
 # Removes the non-repaired wheels.
 RUN rm -rd /tmp/wheelhouse
 
@@ -86,7 +83,7 @@ COPY --from=build-wheels /wheelhouse /wheelhouse
 ENV PY_VERSION cp310-cp310
 ENV PYBIN /opt/python/$PY_VERSION/bin
 # Installs the wheels in all our Pythons.
-RUN "${PYBIN}/pip" install cresta-pynini --no-index -f /wheelhouse
+RUN "${PYBIN}/pip" install cresta-pynini -f /wheelhouse
 
 # ***************************
 # *** Runs pynini's tests ***
