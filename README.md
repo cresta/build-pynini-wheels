@@ -17,9 +17,25 @@ favourite linux.
 The process differs for macOS and Windows.
 
 ## Usage
-To build wheels and run Pynini's tests, run:
+To build wheels and run Pynini's tests for x86_64, run:
 ```shell script
-docker build --target=run-tests -t build-pynini-wheels .
+docker build \
+    --build-arg="PYNINI_VERSION=2.1.5" \
+    --build_arg="FST_VERSION=1.8.2" \
+    --target=run-tests \
+    -t build-pynini-wheels \
+    .
+```
+
+To build wheels and run Pynini's tests for aarch64, run:
+```shell script
+docker build \
+    --build-arg="PYNINI_VERSION=2.1.5" \
+    --build_arg="FST_VERSION=1.8.2" \
+    --target=run-tests \
+    -t build-pynini-wheels \
+    -f Dockerfile.arm64 \
+    .
 ```
 
 To extract the resulting wheels from the Docker image, run:

@@ -13,7 +13,7 @@
 # ******************************************************
 # *** All the following images are based on this one ***
 # ******************************************************
-FROM quay.io/pypa/manylinux2014_x86_64 AS common
+FROM quay.io/pypa/manylinux2014_aarch64 AS common
 
 # The versions we want in the wheels.
 ARG FST_VERSION
